@@ -1,15 +1,14 @@
+#![no_std]
 #![feature(maybe_uninit_slice)]
 
-// #![feature(maybe_uninit_slice)]
-
-use std::{mem::MaybeUninit, ptr::addr_of_mut};
+use core::{mem::MaybeUninit, ptr::addr_of_mut};
 
 #[derive(Debug)]
 pub enum Error {
     NotEnoughCapacity,
 }
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = core::result::Result<T, Error>;
 
 /// A Vec-like (but non-growing) stack-allocated array.
 pub struct PushArray<T, const CAP: usize> {
@@ -19,6 +18,14 @@ pub struct PushArray<T, const CAP: usize> {
 
 impl<T, const CAP: usize> PushArray<T, CAP> {
     /// Create an empty [`PushArray`] with the given capacity.
+    /// ```
+    /// # use pushy::PushArray;
+    /// let mut arr: PushArray<u8, 5> = PushArray::new();
+    ///
+    /// assert!(arr.is_empty());
+    /// assert_eq!(arr.len(), 0);
+    /// assert_eq!(arr.initialized(), &[]);
+    /// ```
     pub const fn new() -> Self {
         // Safety: safe since this is an array of `MaybeUninit`s and they don't require initialization
         let buf: [MaybeUninit<T>; CAP] = unsafe { MaybeUninit::uninit().assume_init() };
@@ -29,7 +36,6 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
     /// Returns the amount of initialized elements in this [`PushArray`].
     /// ```
     /// # use pushy::PushArray;
-    ///
     /// let mut arr: PushArray<u32, 5> = PushArray::new();
     /// assert_eq!(arr.len(), 0);
     ///
@@ -71,6 +77,19 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
         self.len += 1;
     }
 
+    /// Push an element to the end of this array after making sure
+    /// that the array has enough space to hold it.
+    ///
+    /// ```
+    /// # use pushy::PushArray;
+    /// let mut arr: PushArray<u32, 2> = PushArray::new();
+    ///
+    /// assert!(arr.push_checked(5).is_ok());
+    /// assert!(arr.push_checked(20).is_ok());
+    ///
+    /// // Not enough capacity!
+    /// assert!(arr.push_checked(9).is_err());
+    /// ```
     pub fn push_checked(&mut self, value: T) -> Result<()> {
         if self.len < CAP {
             Ok(unsafe { self.push_unchecked(value) })
@@ -84,6 +103,15 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
     /// # Panics
     ///
     /// Panics if the capacity of this array is overrun.
+    ///
+    /// ```
+    /// # use pushy::PushArray;
+    /// let mut bytes: PushArray<u8, 2> = PushArray::new();
+    /// bytes.push(b'H');
+    /// bytes.push(b'i');
+    ///
+    /// assert_eq!(bytes.as_str().unwrap(), "Hi");
+    /// ```
     pub fn push(&mut self, value: T) {
         self.push_checked(value).expect("overflow in PushArray!")
     }
@@ -136,7 +164,14 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
 
     /// Returns the initialized elements of this [`PushArray`].
     pub fn initialized(&self) -> &[T] {
-        unsafe { std::slice::from_raw_parts(self.as_ptr(), self.len) }
+        // Safety:
+        //
+        // * The elements given by `self.as_ptr()` are properly aligned since they come from
+        //   an array (and the memory layout of MaybeUninit<T> is the same as the memory layout of T)
+        //
+        // * The slice will be created only with initialized values since we know that `self.len` is
+        //   the amount of properly initialized elements in our array.
+        unsafe { core::slice::from_raw_parts(self.as_ptr(), self.len) }
     }
 
     /// "Clears" the [`PushArray`]. The stored memory is not cleared or immediately
@@ -145,7 +180,6 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
     ///
     /// ```
     /// # use pushy::PushArray;
-    ///
     /// let mut bytes: PushArray<u8, 5> = PushArray::new();
     /// bytes.push_str("Hello").unwrap();
     ///
@@ -168,13 +202,26 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
 }
 
 impl<T: Copy, const CAP: usize> PushArray<T, CAP> {
+    /// Copy the elements from the given slice into the end of the [`PushArray`].
+    ///
+    /// ```
+    /// # use pushy::PushArray;
+    /// let mut bytes: PushArray<u8, 5> = PushArray::new();
+    /// bytes.copy_from_slice(b"Hello").unwrap();
+    ///
+    /// assert_eq!(bytes.as_str(), Some("Hello"));
+    /// ```
     fn copy_from_slice(&mut self, slice: &[T]) -> Result<()> {
         if self.len + slice.len() > CAP {
             return Err(Error::NotEnoughCapacity);
         }
 
+        // Safety: we've just checked that there is enough storage
+        //         to hold the new elements.
+        //
+        //         We also know these elements are trivially copiable since they implement Copy.
         unsafe {
-            std::ptr::copy_nonoverlapping(
+            core::ptr::copy_nonoverlapping(
                 slice.as_ptr(),
                 self.as_mut_ptr().add(self.len),
                 slice.len(),
@@ -187,12 +234,30 @@ impl<T: Copy, const CAP: usize> PushArray<T, CAP> {
 }
 
 impl<const CAP: usize> PushArray<u8, CAP> {
-    /// Returns the bytes of this [`PushArray`], if they're valid UTF-8.
+    /// Returns the bytes of this [`PushArray`] as a `&str` if they're valid UTF-8.
+    /// ```
+    /// # use pushy::PushArray;
+    /// let mut bytes: PushArray<u8, 11> = PushArray::new();
+    /// bytes.push_str("Hello").unwrap();
+    /// assert_eq!(bytes.as_str(), Some("Hello"));
+    ///
+    /// bytes.push_str(" World").unwrap();
+    /// assert_eq!(bytes.as_str(), Some("Hello World"));
+    /// ```
     pub fn as_str(&self) -> Option<&str> {
-        std::str::from_utf8(self.initialized()).ok()
+        core::str::from_utf8(self.initialized()).ok()
     }
 
     /// Push a UTF-8 string to the back of this [`PushArray`].
+    ///
+    /// ```
+    /// # use pushy::PushArray;
+    /// let mut bytes: PushArray<u8, 11> = PushArray::new();
+    ///
+    /// assert_eq!(bytes.as_str(), Some(""));
+    /// bytes.push_str("Hello").unwrap();
+    /// assert_eq!(bytes.as_str(), Some("Hello"));
+    /// ```
     pub fn push_str(&mut self, value: &str) -> Result<()> {
         let bytes = value.as_bytes();
 
