@@ -1,7 +1,11 @@
 #![no_std]
 #![feature(maybe_uninit_slice)]
 
-use core::{mem::MaybeUninit, ptr::addr_of_mut};
+use core::{
+    mem::MaybeUninit,
+    ops::{Deref, DerefMut},
+    ptr::addr_of_mut,
+};
 
 #[derive(Debug)]
 pub enum Error {
@@ -174,6 +178,18 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
         unsafe { core::slice::from_raw_parts(self.as_ptr(), self.len) }
     }
 
+    /// Returns the initialized elements of this [`PushArray`].
+    pub fn initialized_mut(&mut self) -> &mut [T] {
+        // Safety:
+        //
+        // * The elements given by `self.as_mut_ptr()` are properly aligned since they come from
+        //   an array (and the memory layout of MaybeUninit<T> is the same as the memory layout of T)
+        //
+        // * The slice will be created only with initialized values since we know that `self.len` is
+        //   the amount of properly initialized elements in our array.
+        unsafe { core::slice::from_raw_parts_mut(self.as_mut_ptr(), self.len) }
+    }
+
     /// "Clears" the [`PushArray`]. The stored memory is not cleared or immediately
     /// dropped, but will be overwritten whenever new information is
     /// pushed into the array.
@@ -230,6 +246,28 @@ impl<T: Copy, const CAP: usize> PushArray<T, CAP> {
 
         self.len += slice.len();
         Ok(())
+    }
+}
+
+impl<T, const CAP: usize> Drop for PushArray<T, CAP> {
+    fn drop(&mut self) {
+        unsafe {
+            core::ptr::drop_in_place(self.initialized_mut());
+        }
+    }
+}
+
+impl<T, const N: usize> Deref for PushArray<T, N> {
+    type Target = [T];
+
+    fn deref(&self) -> &[T] {
+        self.as_slice()
+    }
+}
+
+impl<T, const N: usize> DerefMut for PushArray<T, N> {
+    fn deref_mut(&mut self) -> &mut [T] {
+        self.initialized_mut()
     }
 }
 
