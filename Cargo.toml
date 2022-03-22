@@ -1,0 +1,10 @@
+[package]
+name = "pushy"
+version = "0.1.0"
+edition = "2021"
+authors = ["Vinícius R. Miguel <vrmiguel99@gmail.com>"]
+readme = "README.md"
+repository = "https://github.com/vrmiguel/pushy"
+license = "MIT"
+
+[dependencies]
