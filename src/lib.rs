@@ -220,13 +220,13 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
 impl<T: Copy, const CAP: usize> PushArray<T, CAP> {
     /// Copy the elements from the given slice into the end of the [`PushArray`].
     ///
-    /// ```
-    /// # use pushy::PushArray;
-    /// let mut bytes: PushArray<u8, 5> = PushArray::new();
-    /// bytes.copy_from_slice(b"Hello").unwrap();
-    ///
-    /// assert_eq!(bytes.as_str(), Some("Hello"));
-    /// ```
+    // ```
+    // # use pushy::PushArray;
+    // let mut bytes: PushArray<u8, 5> = PushArray::new();
+    // bytes.copy_from_slice(b"Hello");
+    //
+    // assert_eq!(bytes.as_str(), Some("Hello"));
+    // ```
     fn copy_from_slice(&mut self, slice: &[T]) -> Result<()> {
         if self.len + slice.len() > CAP {
             return Err(Error::NotEnoughCapacity);
@@ -261,7 +261,7 @@ impl<T, const N: usize> Deref for PushArray<T, N> {
     type Target = [T];
 
     fn deref(&self) -> &[T] {
-        self.as_slice()
+        self.initialized()
     }
 }
 
