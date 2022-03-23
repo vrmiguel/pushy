@@ -385,6 +385,44 @@ mod tests {
     use crate::PushArray;
 
     #[test]
+    fn deref_to_slice() {
+        let mut arr: PushArray<u8, 5> = PushArray::new();
+        arr.push_str("World").unwrap();
+
+        let slice: &[u8] = &*arr;
+
+        assert_eq!(slice, arr.as_slice());
+    }
+
+    #[test]
+    fn copy_from_slice_fails_when_not_enough_capacity() {
+        let mut arr: PushArray<u8, 3> = PushArray::new();
+        let zeroes = [0, 0, 0, 0];
+
+        assert!(arr.copy_from_slice(&zeroes).is_err());
+    }
+
+    #[test]
+    fn push_array_fails_when_not_enough_capacity() {
+        let mut arr: PushArray<u8, 3> = PushArray::new();
+        let zeroes = [0, 0, 0, 0];
+
+        assert!(arr.push_array(zeroes).is_err());
+    }
+
+    #[test]
+    fn push_checked() {
+        let mut arr: PushArray<u8, 3> = PushArray::new();
+        assert!(arr.push_checked(10).is_ok());
+        assert!(arr.push_checked(20).is_ok());
+        assert!(arr.push_checked(30).is_ok());
+
+        // Not enough capacity!
+        assert!(arr.push_checked(50).is_err());
+        assert!(arr.push_checked(60).is_err());
+    }
+
+    #[test]
     fn length() {
         let mut bytes: PushArray<u8, 9> = PushArray::new();
         assert_eq!(bytes.len(), 0);
@@ -505,6 +543,7 @@ mod tests {
         }
 
         assert_eq!(numbers.initialized(), &[2, 5, 7, 2, 3, 4]);
+        assert_eq!(numbers.as_slice(), &[2, 5, 7, 2, 3, 4]);
     }
 
     #[test]
