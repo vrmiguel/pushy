@@ -384,6 +384,53 @@ mod tests {
     use crate::PushArray;
 
     #[test]
+    fn as_str_and_push_str() {
+        let mut bytes: PushArray<u8, 11> = PushArray::new();
+        bytes.push_str("Hello").unwrap();
+        assert_eq!(bytes.as_str(), Some("Hello"));
+
+        bytes.push(b' ');
+        assert_eq!(bytes.as_str(), Some("Hello "));
+
+        bytes.push_str("World").unwrap();
+        assert_eq!(bytes.as_str(), Some("Hello World"));
+    }
+
+    #[test]
+    fn copy_from_slice() {
+        let mut arr: PushArray<_, 10> = PushArray::new();
+        let byte_slice = b"rogue-like";
+
+        arr.copy_from_slice(byte_slice).unwrap();
+
+        assert_eq!(arr.as_str().unwrap().as_bytes(), byte_slice)
+    }
+
+    #[test]
+    fn index_impl() {
+        let mut arr: PushArray<u8, 3> = PushArray::new();
+
+        arr.push_str("Hey").unwrap();
+
+        assert_eq!(arr[0], b'H');
+        assert_eq!(arr[1], b'e');
+        assert_eq!(arr[2], b'y');
+    }
+
+    #[test]
+    #[should_panic]
+    fn index_panics_when_out_of_bounds() {
+        let mut arr: PushArray<u8, 3> = PushArray::new();
+
+        arr.push_str("Hey").unwrap();
+
+        assert_eq!(arr[0], b'H');
+        assert_eq!(arr[1], b'e');
+        assert_eq!(arr[2], b'y');
+        arr[3]; // uh-oh
+    }
+
+    #[test]
     #[should_panic]
     fn panics_when_overflows() {
         let mut numbers: PushArray<u32, 1> = PushArray::new();
