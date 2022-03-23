@@ -279,6 +279,7 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
     /// );
     /// ```
     pub fn clear(&mut self) {
+        // TODO: call `drop_in_place`?
         self.len = 0;
     }
 }
@@ -400,6 +401,10 @@ mod tests {
         let hello = [b'H', b'e', b'l', b'l', b'o'];
         bytes.push_array(hello).unwrap();
         assert_eq!(bytes.len(), 9);
+
+        bytes.clear();
+        assert_eq!(bytes.len(), 0);
+        assert!(bytes.is_empty());
     }
 
     #[test]
@@ -434,6 +439,30 @@ mod tests {
         arr.copy_from_slice(byte_slice).unwrap();
 
         assert_eq!(arr.as_str().unwrap().as_bytes(), byte_slice)
+    }
+
+    #[test]
+    fn get() {
+        let mut arr: PushArray<u8, 3> = PushArray::new();
+        arr.push_str("Hey").unwrap();
+
+        assert_eq!(arr.get(0), Some(&b'H'));
+        assert_eq!(arr.get(1), Some(&b'e'));
+        assert_eq!(arr.get(2), Some(&b'y'));
+        assert_eq!(arr.get(3), None);
+    }
+
+    #[test]
+    fn get_mut() {
+        let mut arr: PushArray<u8, 3> = PushArray::new();
+        arr.push_str("Hey").unwrap();
+
+        assert_eq!(arr.as_str().unwrap(), "Hey");
+
+        let t = arr.get_mut(1).unwrap();
+        *t = b'a';
+
+        assert_eq!(arr.as_str().unwrap(), "Hay");
     }
 
     #[test]
