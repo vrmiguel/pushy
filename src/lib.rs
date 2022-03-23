@@ -3,7 +3,7 @@
 
 use core::{
     mem::MaybeUninit,
-    ops::{Deref, DerefMut},
+    ops::{Deref, DerefMut, Index},
     ptr::addr_of_mut,
 };
 
@@ -64,6 +64,74 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
     /// ```
     pub fn is_empty(&self) -> bool {
         self.len == 0
+    }
+
+    /// Returns a reference to an initialized element of the array.
+    ///
+    /// Returns `None` if the given index is out-of-bounds or not initialized.
+    ///
+    /// ```
+    /// # use pushy::PushArray;
+    /// let mut arr: PushArray<u8, 3> = PushArray::new();
+    ///
+    /// arr.push_str("Hey").unwrap();
+    ///
+    /// assert_eq!(arr.get(0), Some(&b'H'));
+    /// assert_eq!(arr.get(1), Some(&b'e'));
+    /// assert_eq!(arr.get(2), Some(&b'y'));
+    /// assert_eq!(arr.get(3), None);
+    /// ```
+    pub fn get(&self, index: usize) -> Option<&T> {
+        // Safety: only called after we've made sure that the
+        // element in the given index is in-bounds and initialized
+        let get_elem = || unsafe { self.get_unchecked(index) };
+
+        (self.len > index).then(get_elem)
+    }
+
+    /// Returns a mutable reference to an initialized element of the array.
+    ///
+    /// Returns `None` if the given index is out-of-bounds or not initialized.
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut T> {
+        // Safety: only called after we've made sure that the
+        // element in the given index is in-bounds and initialized
+        (self.len > index).then(|| unsafe { self.get_unchecked_mut(index) })
+    }
+
+    /// Returns a reference to an element without doing bounds
+    /// checking.
+    ///
+    /// For a safe alternative see [`get`].
+    ///
+    /// # Safety
+    ///
+    /// Calling this method with an out-of-bounds index is *[undefined behavior]*
+    /// even if the resulting reference is not used.
+    ///
+    /// This method does not guarantee that the element returned is properly initialized.
+    ///
+    /// [`get`]: PushArray::get
+    /// [undefined behavior]: https://doc.rust-lang.org/reference/behavior-considered-undefined.html
+    pub unsafe fn get_unchecked(&self, index: usize) -> &T {
+        self.buf.get_unchecked(index).assume_init_ref()
+    }
+
+    /// Returns a mutable reference to an element without doing bounds
+    /// checking.
+    ///
+    /// For a safe alternative see [`get_mut`].
+    ///
+    /// # Safety
+    ///
+    /// Calling this method with an out-of-bounds index is *[undefined behavior]*
+    /// even if the resulting reference is not used.
+    ///
+    /// This method does not guarantee that the element returned is properly initialized.
+    ///
+    /// [`get_mut`]: PushArray::get_mut
+    /// [undefined behavior]: https://doc.rust-lang.org/reference/behavior-considered-undefined.html
+    pub unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut T {
+        self.buf.get_unchecked_mut(index).assume_init_mut()
     }
 
     /// Pushes an element to the back of the [`PushArray`] without
