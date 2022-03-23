@@ -323,6 +323,16 @@ impl<T, const CAP: usize> Drop for PushArray<T, CAP> {
     }
 }
 
+impl<T, const N: usize> Index<usize> for PushArray<T, N> {
+    type Output = T;
+
+    fn index(&self, index: usize) -> &T {
+        // TODO: format! a better panic message
+        self.get(index)
+            .expect("PushArray: received out-of-bounds index")
+    }
+}
+
 impl<T, const N: usize> Deref for PushArray<T, N> {
     type Target = [T];
 
