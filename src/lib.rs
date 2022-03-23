@@ -384,6 +384,36 @@ mod tests {
     use crate::PushArray;
 
     #[test]
+    fn length() {
+        let mut bytes: PushArray<u8, 9> = PushArray::new();
+        assert_eq!(bytes.len(), 0);
+        assert!(bytes.is_empty());
+
+        bytes.push(b'H');
+        assert_eq!(bytes.len(), 1);
+        assert_eq!(bytes.is_empty(), false);
+
+        bytes.push_str("ey ").unwrap();
+        assert_eq!(bytes.len(), 4);
+        assert_eq!(bytes.is_empty(), false);
+
+        let hello = [b'H', b'e', b'l', b'l', b'o'];
+        bytes.push_array(hello).unwrap();
+        assert_eq!(bytes.len(), 9);
+    }
+
+    #[test]
+    fn push_array() {
+        let mut bytes: PushArray<u8, 10> = PushArray::new();
+        let hello = [b'H', b'e', b'l', b'l', b'o'];
+        bytes.copy_from_slice(&hello).unwrap();
+        assert_eq!(bytes.as_str(), Some("Hello"));
+
+        bytes.push_array(hello).unwrap();
+        assert_eq!(bytes.as_str(), Some("HelloHello"));
+    }
+
+    #[test]
     fn as_str_and_push_str() {
         let mut bytes: PushArray<u8, 11> = PushArray::new();
         bytes.push_str("Hello").unwrap();
