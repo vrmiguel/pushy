@@ -163,11 +163,9 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
     /// assert!(arr.push_checked(9).is_err());
     /// ```
     pub fn push_checked(&mut self, value: T) -> Result<()> {
-        if self.len < CAP {
-            Ok(unsafe { self.push_unchecked(value) })
-        } else {
-            Err(Error::NotEnoughCapacity)
-        }
+        (self.len < CAP)
+            .then(|| unsafe { self.push_unchecked(value) })
+            .ok_or(Error::NotEnoughCapacity)
     }
 
     /// Push an element to the back of this [`PushArray`].
@@ -291,7 +289,7 @@ impl<T: Copy, const CAP: usize> PushArray<T, CAP> {
     // ```
     // # use pushy::PushArray;
     // let mut bytes: PushArray<u8, 5> = PushArray::new();
-    // bytes.copy_from_slice(b"Hello");
+    // bytes.copy_from_slice(b"Hello").unwrap();
     //
     // assert_eq!(bytes.as_str(), Some("Hello"));
     // ```
