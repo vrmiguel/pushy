@@ -481,7 +481,7 @@ mod tests {
 
     #[test]
     fn get() {
-        let mut arr: PushArray<u8, 3> = PushArray::new();
+        let mut arr: PushArray<u8, 10> = PushArray::new();
         arr.push_str("Hey").unwrap();
 
         assert_eq!(arr.get(0), Some(&b'H'));
