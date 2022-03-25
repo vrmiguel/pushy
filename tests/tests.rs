@@ -203,3 +203,28 @@ fn initiliazed_when_uninitialized() {
     let numbers: PushArray<u8, 20> = PushArray::new();
     assert_eq!(numbers.initialized(), &[])
 }
+
+#[test]
+fn collect_iterator() {
+    let array = [1, 2, 3, 4];
+    let numbers: PushArray<u8, 20> = array.iter().copied().collect();
+
+    assert_eq!(numbers.as_slice(), array.as_slice());
+}
+
+#[test]
+#[should_panic]
+fn collect_iterator_capacity_error() {
+    let array = [1, 2, 3, 4];
+    let numbers: PushArray<u8, 3> = array.iter().copied().collect();
+
+    assert_eq!(numbers.as_ref(), array.as_slice());
+}
+
+#[test]
+fn collect_iterator_empty_without_capacity_dont_panic() {
+    let array = [];
+    let numbers: PushArray<u8, 0> = array.iter().copied().collect();
+
+    assert_eq!(numbers.as_slice(), array.as_slice());
+}
