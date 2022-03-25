@@ -207,6 +207,20 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
         Ok(())
     }
 
+    /// Removes the last element from the `PushArray`.
+    pub fn pop(&mut self) -> Option<T> {
+        self.len = self.len.checked_sub(1)?;
+
+        let mut popped = MaybeUninit::uninit();
+        unsafe {
+            let ptr = self.as_ptr().add(self.len) as *const T;
+            popped.write(ptr.read());
+            // Safety: we've just written to `popped`, therefore we
+            //         can assume it's uninitialized
+            Some(popped.assume_init())
+        }
+    }
+
     /// Gets a pointer to the first element of the array.
     ///
     /// # Safety

@@ -1,4 +1,55 @@
+use std::sync::Arc;
+
 use pushy::PushArray;
+
+#[test]
+fn drop() {
+    let arc = Arc::new(0);
+
+    {
+        let mut arr: PushArray<_, 3> = PushArray::new();
+        for _ in 0..3 {
+            // arr.clone_from_slice()
+            arr.push(arc.clone());
+        }
+        // There should now be 4 references to the
+        // element of the Arc
+        assert_eq!(Arc::strong_count(&arc), 4);
+    }
+
+    // The PushArray must've been dropped
+    //
+    // Therefore the reference count of the Arc
+    // should now be 1.
+    assert_eq!(Arc::strong_count(&arc), 1);
+}
+
+#[test]
+fn pop_drop() {
+    let arc = Arc::new(0);
+    let mut arr: PushArray<_, 1> = PushArray::new();
+    arr.push(arc.clone());
+
+    let _dropped = arr.pop().unwrap();
+
+    assert_eq!(Arc::strong_count(&arc), 2);
+}
+
+#[test]
+fn pop_str() {
+    let mut arr: PushArray<&str, 2> = PushArray::new();
+    arr.push("Over");
+    arr.push("There");
+    assert_eq!(arr.len(), 2);
+
+    let popped = arr.pop().unwrap();
+    assert_eq!(arr.len(), 1);
+
+    arr.push("Here");
+
+    assert_eq!(arr.as_slice(), &["Over", "Here"]);
+    assert_eq!(popped, "There");
+}
 
 #[test]
 fn partial_eq() {
