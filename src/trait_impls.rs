@@ -68,7 +68,7 @@ impl<T, const CAP: usize> Drop for PushArray<T, CAP> {
     }
 }
 
-impl<T, const N: usize> Deref for PushArray<T, N> {
+impl<T, const CAP: usize> Deref for PushArray<T, CAP> {
     type Target = [T];
 
     fn deref(&self) -> &[T] {
@@ -76,8 +76,20 @@ impl<T, const N: usize> Deref for PushArray<T, N> {
     }
 }
 
-impl<T, const N: usize> DerefMut for PushArray<T, N> {
+impl<T, const CAP: usize> DerefMut for PushArray<T, CAP> {
     fn deref_mut(&mut self) -> &mut [T] {
         self.initialized_mut()
+    }
+}
+
+impl<T, const CAP: usize> FromIterator<T> for PushArray<T, CAP> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let mut arr = Self::new();
+
+        for item in iter {
+            arr.push(item);
+        }
+
+        arr
     }
 }
