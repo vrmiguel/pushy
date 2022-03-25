@@ -9,7 +9,6 @@ fn drop() {
     {
         let mut arr: PushArray<_, 3> = PushArray::new();
         for _ in 0..3 {
-            // arr.clone_from_slice()
             arr.push(arc.clone());
         }
         // There should now be 4 references to the
@@ -22,6 +21,24 @@ fn drop() {
     // Therefore the reference count of the Arc
     // should now be 1.
     assert_eq!(Arc::strong_count(&arc), 1);
+}
+
+#[test]
+fn clear() {
+    let arc = Arc::new(0);
+
+    let mut arr: PushArray<_, 4> = PushArray::new();
+    for _ in 0..4 {
+        arr.push(arc.clone());
+    }
+
+    let popped = arr.pop().unwrap();
+
+    arr.clear();
+
+    assert_eq!(Arc::strong_count(&arc), 2);
+    assert_eq!(arr.len(), 0);
+    assert_eq!(*popped, 0);
 }
 
 #[test]
