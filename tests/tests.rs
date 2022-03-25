@@ -45,11 +45,12 @@ fn clear() {
 fn pop_drop() {
     let arc = Arc::new(0);
     let mut arr: PushArray<_, 1> = PushArray::new();
+    
     arr.push(arc.clone());
-
-    let _dropped = arr.pop().unwrap();
-
     assert_eq!(Arc::strong_count(&arc), 2);
+
+    arr.pop().unwrap();
+    assert_eq!(Arc::strong_count(&arc), 1);
 }
 
 #[test]

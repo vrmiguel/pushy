@@ -274,9 +274,7 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
         unsafe { core::slice::from_raw_parts_mut(self.as_mut_ptr(), self.len) }
     }
 
-    /// "Clears" the [`PushArray`]. The stored memory is not cleared or immediately
-    /// dropped, but will be overwritten whenever new information is
-    /// pushed into the array.
+    /// Clear the [`PushArray`]. All initialized elements will be dropped.
     ///
     /// ```
     /// # use pushy::PushArray;
