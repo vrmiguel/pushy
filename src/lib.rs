@@ -1,3 +1,4 @@
+//! A pushable array type with fixed capacity.
 #![no_std]
 #![feature(maybe_uninit_slice)]
 
@@ -12,8 +13,30 @@ pub enum Error {
 
 pub type Result<T> = core::result::Result<T, Error>;
 
-/// A Vec-like (but non-growing) stack-allocated array.
-// #[derive(Hash)]
+/// A pushable array with fixed capacity.
+///
+/// Stack-allocated drop-in replacement for known capacity `Vec`s.
+///
+/// Panics on `.push()` if capacity is exhausted, see `.push_checked()` if you want a checked alternative.
+///
+/// # Examples
+///
+/// ```
+/// use pushy::PushArray;
+///
+/// let mut array: PushArray<i32, 5> = PushArray::new();
+/// array.push(1);
+/// array.push(2);
+///
+/// assert_eq!(array.len(), 2);
+/// assert_eq!(array[0], 1);
+///
+/// assert_eq!(array.pop(), Some(2));
+/// assert_eq!(array.len(), 1);
+///
+/// array[0] = 7;
+/// assert_eq!(array[0], 7);
+/// ```
 pub struct PushArray<T, const CAP: usize> {
     buf: [MaybeUninit<T>; CAP],
     len: usize,
