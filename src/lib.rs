@@ -274,6 +274,67 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
         unsafe { core::slice::from_raw_parts_mut(self.as_mut_ptr(), self.len) }
     }
 
+    /// Checks if all elements of this [`PushArray`] are initialized.
+    ///
+    /// ```
+    /// # use pushy::PushArray;
+    /// let mut bytes: PushArray<u8, 5> = PushArray::new();
+    /// assert_eq!(bytes.is_fully_initialized(), false);
+    ///
+    /// bytes.push_str("Hello").unwrap();
+    ///
+    /// assert!(bytes.is_fully_initialized());
+    /// ```
+    pub fn is_fully_initialized(&self) -> bool {
+        self.len == CAP
+    }
+
+    /// Converts this [`PushArray<T; N>`](PushArray) into `[T; N]`, if all `N`
+    /// elements allocated are initialized.
+    ///
+    /// ```
+    /// # use pushy::PushArray;
+    /// let mut bytes: PushArray<i8, 2> = PushArray::new();
+    /// bytes.push(1);
+    /// bytes.push(5);
+    ///
+    /// assert_eq!(bytes.into_array(), Ok([1, 5]));
+    /// ```
+    pub fn into_array(self) -> core::result::Result<[T; CAP], Self> {
+        if self.is_fully_initialized() {
+            // Safety: it's ok to convert this PushArray into an array
+            // since all elements are initialized and the memory layout
+            // of [MaybeUninit<T>; N] and [T; N] is the same
+            let array = unsafe { self.into_array_unchecked() };
+            Ok(array)
+        } else {
+            Err(self)
+        }
+    }
+
+    /// Converts this [`PushArray<T; N>`](PushArray) into `[T; N]` without
+    /// checking if all `N` elements are initialized.
+    ///
+    /// # Safety
+    ///
+    /// Calling this function with a [`PushArray`] that is not fully initialized
+    /// results in unknown behavior.
+    ///
+    /// ```
+    /// # use pushy::PushArray;
+    /// let mut bytes: PushArray<i8, 2> = PushArray::new();
+    /// bytes.push_array([2, 3]).unwrap();
+    ///
+    /// // Safe to convert to array since all elements are initialized
+    /// let array = unsafe { bytes.into_array_unchecked() };
+    ///
+    /// assert_eq!(array, [2, 3]);
+    /// ```
+    pub unsafe fn into_array_unchecked(self) -> [T; CAP] {
+        let ptr = self.as_ptr() as *const [T; CAP];
+        ptr.read()
+    }
+
     /// Clear the [`PushArray`]. All initialized elements will be dropped.
     ///
     /// ```
