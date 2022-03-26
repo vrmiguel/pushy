@@ -1,29 +1,14 @@
 use core::{
     fmt::Debug,
     hash::Hash,
-    mem::MaybeUninit,
     ops::{Deref, DerefMut},
-    ptr::addr_of_mut,
 };
 
 use crate::PushArray;
 
 impl<T: Clone, const CAP: usize> Clone for PushArray<T, CAP> {
     fn clone(&self) -> Self {
-        let mut cloned = Self::array_of_uninit();
-
-        for ((idx, uninit), elem) in cloned.iter_mut().enumerate().zip(self.iter()) {
-            unsafe {
-                addr_of_mut!(*uninit)
-                    .add(idx)
-                    .write(MaybeUninit::new(elem.clone()));
-            }
-        }
-
-        Self {
-            buf: cloned,
-            len: self.len,
-        }
+        self.iter().cloned().collect()
     }
 }
 
