@@ -19,9 +19,18 @@ impl<T: Hash, const CAP: usize> Hash for PushArray<T, CAP> {
     }
 }
 
-impl<T: PartialEq, const CAP: usize> PartialEq for PushArray<T, CAP> {
-    fn eq(&self, other: &Self) -> bool {
-        self.len == other.len && self.as_slice() == other.as_slice()
+impl<T, const CAP: usize> AsRef<[T]> for PushArray<T, CAP> {
+    fn as_ref(&self) -> &[T] {
+        self.as_slice()
+    }
+}
+
+impl<T: PartialEq, const CAP: usize, U> PartialEq<U> for PushArray<T, CAP>
+where
+    U: AsRef<[T]>,
+{
+    fn eq(&self, other: &U) -> bool {
+        self.as_ref() == other.as_ref()
     }
 }
 

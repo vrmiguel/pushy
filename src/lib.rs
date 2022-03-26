@@ -26,15 +26,16 @@ pub type Result<T> = core::result::Result<T, Error>;
 /// let mut array: PushArray<i32, 5> = PushArray::new();
 /// array.push(1);
 /// array.push(2);
+/// array.push(3);
 ///
-/// assert_eq!(array.len(), 2);
+/// assert_eq!(array.len(), 3);
 /// assert_eq!(array[0], 1);
 ///
-/// assert_eq!(array.pop(), Some(2));
-/// assert_eq!(array.len(), 1);
+/// assert_eq!(array.pop(), Some(3));
+/// assert_eq!(array.len(), 2);
 ///
 /// array[0] = 7;
-/// assert_eq!(array[0], 7);
+/// assert_eq!(array, [7, 2]);
 /// ```
 pub struct PushArray<T, const CAP: usize> {
     buf: [MaybeUninit<T>; CAP],
