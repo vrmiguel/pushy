@@ -3,6 +3,54 @@ use std::sync::Arc;
 use pushy::PushArray;
 
 #[test]
+fn is_fully_initialized() {
+    let mut arr: PushArray<_, 2> = PushArray::new();
+    arr.push(2);
+    assert_eq!(arr.is_fully_initialized(), false);
+
+    arr.push(3);
+    assert!(arr.is_fully_initialized());
+
+    arr.pop();
+    assert_eq!(arr.is_fully_initialized(), false);
+}
+
+#[test]
+fn into_array_unchecked() {
+    let mut bytes: PushArray<_, 2> = PushArray::new();
+    bytes.push_array(["A", "B"]).unwrap();
+
+    let array = unsafe { bytes.into_array_unchecked() };
+    assert_eq!(array, ["A", "B"]);
+}
+
+#[test]
+fn into_array_fully_initialized() {
+    let mut bytes: PushArray<_, 3> = PushArray::new();
+    bytes.push("A");
+    bytes.push("B");
+    bytes.push("C");
+
+    assert!(bytes.is_fully_initialized());
+
+    assert_eq!(bytes.into_array(), Ok(["A", "B", "C"]));
+}
+
+#[test]
+fn into_array_fails_when_not_fully_initialized() {
+    let mut bytes: PushArray<_, 3> = PushArray::new();
+    bytes.push("A");
+    bytes.push("B");
+
+    assert_eq!(bytes.is_fully_initialized(), false);
+
+    let backup = bytes.clone();
+    dbg!(&backup);
+
+    assert_eq!(bytes.into_array(), Err(backup));
+}
+
+#[test]
 fn drop() {
     let arc = Arc::new(0);
 
@@ -45,7 +93,7 @@ fn clear() {
 fn pop_drop() {
     let arc = Arc::new(0);
     let mut arr: PushArray<_, 1> = PushArray::new();
-    
+
     arr.push(arc.clone());
     assert_eq!(Arc::strong_count(&arc), 2);
 
