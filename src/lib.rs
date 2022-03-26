@@ -266,11 +266,14 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
         MaybeUninit::slice_as_mut_ptr(&mut self.buf)
     }
 
-    /// Returns the initialized elements of this [`PushArray`].
-    ///
-    /// Alias to [`PushArray::initialized`].
+    /// Extracts a slice containing the entire array.
     pub fn as_slice(&self) -> &[T] {
-        self.initialized()
+        self
+    }
+
+    /// Extracts a mutable slice containing the entire array.
+    pub fn as_mut_slice(&mut self) -> &mut [T] {
+        self
     }
 
     /// Returns the initialized elements of this [`PushArray`].
