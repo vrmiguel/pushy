@@ -1,6 +1,5 @@
 //! A pushable array type with fixed capacity.
 #![no_std]
-#![feature(maybe_uninit_slice)]
 
 mod trait_impls;
 
@@ -252,7 +251,7 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
     ///
     /// * There is no guarantee that the first element exists (if the capacity allocated was zero).
     pub unsafe fn as_ptr(&self) -> *const T {
-        MaybeUninit::slice_as_ptr(&self.buf)
+        &self.buf as *const [MaybeUninit<T>] as *const T
     }
 
     /// Gets a mutable pointer to the first element of the array.
@@ -263,7 +262,7 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
     ///
     /// * There is no guarantee that the first element exists (if the capacity allocated was zero).
     pub unsafe fn as_mut_ptr(&mut self) -> *mut T {
-        MaybeUninit::slice_as_mut_ptr(&mut self.buf)
+        &mut self.buf as *mut [MaybeUninit<T>] as *mut T
     }
 
     /// Extracts a slice containing the entire array.
