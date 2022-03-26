@@ -14,14 +14,14 @@ impl<T: Clone, const CAP: usize> Clone for PushArray<T, CAP> {
 
 impl<T: Hash, const CAP: usize> Hash for PushArray<T, CAP> {
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
-        self.initialized().hash(state);
+        self.as_slice().hash(state);
         self.len.hash(state);
     }
 }
 
 impl<T, const CAP: usize> AsRef<[T]> for PushArray<T, CAP> {
     fn as_ref(&self) -> &[T] {
-        self.as_slice()
+        self
     }
 }
 
@@ -38,20 +38,20 @@ impl<T: Eq, const CAP: usize> Eq for PushArray<T, CAP> {}
 
 impl<T: PartialOrd, const CAP: usize> PartialOrd for PushArray<T, CAP> {
     fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
-        self.initialized().partial_cmp(other.initialized())
+        self.as_slice().partial_cmp(other)
     }
 }
 
 impl<T: Ord, const CAP: usize> Ord for PushArray<T, CAP> {
     fn cmp(&self, other: &Self) -> core::cmp::Ordering {
-        self.initialized().cmp(other.initialized())
+        self.as_slice().cmp(other)
     }
 }
 
 impl<T: Debug, const CAP: usize> Debug for PushArray<T, CAP> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("PushArray")
-            .field("initialized", &self.initialized())
+            .field("initialized", self)
             .finish()
     }
 }
@@ -66,13 +66,13 @@ impl<T, const CAP: usize> Deref for PushArray<T, CAP> {
     type Target = [T];
 
     fn deref(&self) -> &[T] {
-        self.initialized()
+        unsafe { core::slice::from_raw_parts(self.as_ptr(), self.len) }
     }
 }
 
 impl<T, const CAP: usize> DerefMut for PushArray<T, CAP> {
     fn deref_mut(&mut self) -> &mut [T] {
-        self.initialized_mut()
+        unsafe { core::slice::from_raw_parts_mut(self.as_mut_ptr(), self.len) }
     }
 }
 

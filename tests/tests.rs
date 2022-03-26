@@ -45,7 +45,7 @@ fn clear() {
 fn pop_drop() {
     let arc = Arc::new(0);
     let mut arr: PushArray<_, 1> = PushArray::new();
-    
+
     arr.push(arc.clone());
     assert_eq!(Arc::strong_count(&arc), 2);
 
@@ -250,7 +250,9 @@ fn initialized_i32() {
         numbers.push(number);
     }
 
-    assert_eq!(numbers.initialized(), &[2, 5, 7, 2, 3, 4]);
+    assert_eq!(&numbers, &[2, 5, 7, 2, 3, 4]);
+    assert_eq!(&numbers[..], &[2, 5, 7, 2, 3, 4]);
+    assert_eq!(numbers.as_ref(), &[2, 5, 7, 2, 3, 4]);
     assert_eq!(numbers.as_slice(), &[2, 5, 7, 2, 3, 4]);
 }
 
@@ -261,16 +263,16 @@ fn initialized_str() {
         words.push(word);
     }
 
-    assert_eq!(words.initialized(), &["hey", "there", "friend"]);
+    assert_eq!(words, &["hey", "there", "friend"]);
 
     words.push("miss ya");
-    assert_eq!(words.initialized(), &["hey", "there", "friend", "miss ya"]);
+    assert_eq!(words, &["hey", "there", "friend", "miss ya"]);
 }
 
 #[test]
 fn initiliazed_when_uninitialized() {
     let numbers: PushArray<u8, 20> = PushArray::new();
-    assert_eq!(numbers.initialized(), &[])
+    assert_eq!(numbers, &[])
 }
 
 #[test]

@@ -14,9 +14,8 @@ pub type Result<T> = core::result::Result<T, Error>;
 
 /// A pushable array with fixed capacity.
 ///
-/// Stack-allocated drop-in replacement for known capacity `Vec`s.
-///
-/// Panics on `.push()` if capacity is exhausted, see `.push_checked()` if you want a checked alternative.
+/// Stack-allocated drop-in replacement for `Vec`, panic on `.push()` if capacity is
+/// exhausted, see `.push_checked()` if you want a checked alternative.
 ///
 /// # Examples
 ///
@@ -56,7 +55,7 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
     ///
     /// assert!(arr.is_empty());
     /// assert_eq!(arr.len(), 0);
-    /// assert_eq!(arr.initialized(), &[]);
+    /// assert_eq!(arr, []);
     /// ```
     pub const fn new() -> Self {
         let buf = Self::array_of_uninit();
@@ -179,30 +178,6 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
         self
     }
 
-    /// Returns the initialized elements of this [`PushArray`].
-    pub fn initialized(&self) -> &[T] {
-        // Safety:
-        //
-        // * The elements given by `self.as_ptr()` are properly aligned since they come from
-        //   an array (and the memory layout of MaybeUninit<T> is the same as the memory layout of T)
-        //
-        // * The slice will be created only with initialized values since we know that `self.len` is
-        //   the amount of properly initialized elements in our array.
-        unsafe { core::slice::from_raw_parts(self.as_ptr(), self.len) }
-    }
-
-    /// Returns the initialized elements of this [`PushArray`].
-    pub fn initialized_mut(&mut self) -> &mut [T] {
-        // Safety:
-        //
-        // * The elements given by `self.as_mut_ptr()` are properly aligned since they come from
-        //   an array (and the memory layout of MaybeUninit<T> is the same as the memory layout of T)
-        //
-        // * The slice will be created only with initialized values since we know that `self.len` is
-        //   the amount of properly initialized elements in our array.
-        unsafe { core::slice::from_raw_parts_mut(self.as_mut_ptr(), self.len) }
-    }
-
     /// Clear the [`PushArray`]. All initialized elements will be dropped.
     ///
     /// ```
@@ -225,7 +200,7 @@ impl<T, const CAP: usize> PushArray<T, CAP> {
     /// ```
     pub fn clear(&mut self) {
         unsafe {
-            core::ptr::drop_in_place(self.initialized_mut());
+            core::ptr::drop_in_place(self.as_mut_slice());
         }
         self.len = 0;
     }
@@ -275,7 +250,7 @@ impl<const CAP: usize> PushArray<u8, CAP> {
     /// assert_eq!(bytes.as_str(), Some("Hello World"));
     /// ```
     pub fn as_str(&self) -> Option<&str> {
-        core::str::from_utf8(self.initialized()).ok()
+        core::str::from_utf8(self).ok()
     }
 
     /// Push a UTF-8 string to the back of this [`PushArray`].
